@@ -44,7 +44,7 @@ public class AuthService {
         adminRepository.save(admin);
 
         response.put("success", true);
-        response.put("message", "Akun berhasil didaftarkan. Menunggu persetujuan administrator.");
+        response.put("message", "Akun berhasil didaftarkan. Silakan login.");
         return response;
     }
 

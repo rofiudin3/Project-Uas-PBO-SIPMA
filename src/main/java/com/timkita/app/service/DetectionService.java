@@ -1,7 +1,7 @@
 package com.timkita.app.service;
 
-import com.app.interfaces.AttributeDetector;
-import com.app.model.Attribute;
+import com.timkita.app.interfaces.AttributeDetector;
+import com.timkita.app.model.Attribute;
 import org.springframework.stereotype.Service;
 import java.util.List;
 

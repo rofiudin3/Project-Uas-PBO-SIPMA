@@ -122,7 +122,7 @@ export default function App() {
   };
 
   const handleResetSuccess    = () => { setCurrentView('login'); triggerToast('OTP terverifikasi. Silakan login.'); };
-  const handleRegisterSuccess = () => { setCurrentView('login'); triggerToast('Pendaftaran berhasil. Menunggu persetujuan.'); };
+  const handleRegisterSuccess = () => { setCurrentView('login'); triggerToast('Pendaftaran berhasil. Silakan masuk.'); };
 
   // ── Students ──────────────────────────────────────────────────────────────
 
