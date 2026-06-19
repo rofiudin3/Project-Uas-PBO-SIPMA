@@ -23,3 +23,8 @@ buildNumber.properties
 # Eclipse / IDE
 .project
 .classpath
+
+# Local Database Folder
+data/
+/data/
+*.db
