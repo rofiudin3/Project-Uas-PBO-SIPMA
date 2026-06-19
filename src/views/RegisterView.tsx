@@ -35,19 +35,35 @@ export default function RegisterView({ onNavigate, onRegisterSuccess }: Register
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !userId || !email || !password || !confirmPassword) {
-      setErrorMsg('Semua kolom wajib diisi');
-      return;
+      setErrorMsg('Semua kolom wajib diisi'); return;
     }
     if (password !== confirmPassword) {
-      setErrorMsg('Password tidak cocok');
-      return;
+      setErrorMsg('Password tidak cocok'); return;
     }
-    // Simulate register and move to login
-    onRegisterSuccess();
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch('http://localhost:8080/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: userId, password, fullName, role: 'Academic Inspector', department: 'Panitia Monitor' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onRegisterSuccess();
+      } else {
+        setErrorMsg(data.message ?? 'Pendaftaran gagal.');
+      }
+    } catch {
+      setErrorMsg('Tidak dapat terhubung ke server. Pastikan backend berjalan di port 8080.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

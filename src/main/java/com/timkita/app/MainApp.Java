@@ -1,24 +1,12 @@
 package com.timkita.app;
 
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-public class MainApp extends Application {
-
-    @Override
-    public void start(Stage stage) {
-        Label label = new Label("Projeck UAS PBO - Tim Siap!");
-        StackPane root = new StackPane(label);
-        Scene scene = new Scene(root, 800, 600);
-        stage.setTitle("Projeck UAS PBO");
-        stage.setScene(scene);
-        stage.show();
-    }
+@SpringBootApplication
+public class MainApp {
 
     public static void main(String[] args) {
-        launch(args);
+        SpringApplication.run(MainApp.class, args);
     }
 }

@@ -21,57 +21,57 @@ interface VerifyOTPViewProps {
 }
 
 export default function VerifyOTPView({ onNavigate, onResetSuccess }: VerifyOTPViewProps) {
-  const [emailInput, setEmailInput] = useState('admin@sipma.edu');
-  const [otpCode, setOtpCode] = useState(['', '', '', '']);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
   const [isCodeVerified, setIsCodeVerified] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) return;
     const newOtp = [...otpCode];
     newOtp[index] = value;
     setOtpCode(newOtp);
-
-    // Auto-focus next field
-    if (value && index < 3) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
 
-  const verifyCode = (e: React.FormEvent) => {
+  const handleRequestOtp = async () => {
+    if (!emailInput.trim()) { setErrorMsg('Username wajib diisi.'); return; }
+    setLoading(true); setErrorMsg('');
+    try {
+      const res = await fetch('http://localhost:8080/api/auth/request-otp', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: emailInput }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMsg(`OTP berhasil dikirim. (Dev mode: ${data.otp})`);
+      } else { setErrorMsg(data.message ?? 'Gagal mengirim OTP.'); }
+    } catch { setErrorMsg('Tidak dapat terhubung ke server.'); }
+    finally { setLoading(false); }
+  };
+
+  const verifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullCode = otpCode.join('');
-    if (fullCode.length < 4) {
-      setErrorMsg('Please enter the full 4-digit verification code.');
-      return;
-    }
-    // Simulate valid code (any 4-digit code is valid for mock)
-    setIsCodeVerified(true);
-    setErrorMsg('');
-    setSuccessMsg('Code verified successfully. Please configure your new password.');
-  };
-
-  const handleResetPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPassword || !confirmPassword) {
-      setErrorMsg('Please fill in both password fields.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setErrorMsg('Passwords do not match.');
-      return;
-    }
-    setSuccessMsg('Your security credentials have been successfully reset.');
-    setErrorMsg('');
-    setTimeout(() => {
-      onResetSuccess();
-    }, 1500);
+    if (fullCode.length < 6) { setErrorMsg('Masukkan 6 digit kode OTP lengkap.'); return; }
+    setLoading(true); setErrorMsg('');
+    try {
+      const res = await fetch('http://localhost:8080/api/auth/verify-otp', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: emailInput, otp: fullCode }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsCodeVerified(true); setErrorMsg('');
+        setSuccessMsg('OTP berhasil diverifikasi. Silakan kembali login.');
+        setTimeout(() => onResetSuccess(), 1500);
+      } else { setErrorMsg(data.message ?? 'Kode OTP tidak valid.'); }
+    } catch { setErrorMsg('Tidak dapat terhubung ke server.'); }
+    finally { setLoading(false); }
   };
 
   return (

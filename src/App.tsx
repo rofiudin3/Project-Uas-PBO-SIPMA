@@ -3,18 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { 
-  AppView, 
-  StudentRecord, 
-  NotificationLog, 
-  Gender 
-} from './types';
-import { 
-  INITIAL_STUDENTS, 
-  INITIAL_EMAIL_LOGS,
-  ASSET_URLS
-} from './data';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AppView, StudentRecord, NotificationLog, DashboardStats, Gender } from './types';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -32,192 +22,230 @@ import NotificationsView from './views/NotificationsView';
 import SettingsView from './views/SettingsView';
 import ProfileView from './views/ProfileView';
 
-// Icons for toast
-import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+
+const API = 'http://localhost:8080/api';
 
 export default function App() {
-  // Session Access authentication states
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Default logged out to force login on start
+  const [isLoggedIn, setIsLoggedIn]   = useState(false);
   const [currentView, setCurrentView] = useState<AppView>('login');
 
-  // Administrator Details (Editable via Profile/Settings state)
-  const [adminName, setAdminName] = useState('Alex Thompson');
-  const [adminRole, setAdminRole] = useState('Academic Inspector');
-  const [adminUserId, setAdminUserId] = useState('ST-2401');
-  const [adminDepartment, setAdminDepartment] = useState('Panitia Monitor');
-  const [adminAvatar, setAdminAvatar] = useState(ASSET_URLS.adminAvatar);
+  // Admin info
+  const [adminId, setAdminId]                   = useState<number | null>(null);
+  const [adminName, setAdminName]               = useState('Administrator');
+  const [adminRole, setAdminRole]               = useState('Academic Inspector');
+  const [adminUserId, setAdminUserId]           = useState('');
+  const [adminDepartment, setAdminDepartment]   = useState('Panitia Monitor');
+  const [adminAvatar, setAdminAvatar]           = useState('');
 
-  // Registry state tracking lists
-  const [studentsList, setStudentsList] = useState<StudentRecord[]>(INITIAL_STUDENTS);
-  const [emailLogsQueue, setEmailLogsQueue] = useState<NotificationLog[]>(INITIAL_EMAIL_LOGS);
+  // Data states dari API
+  const [studentsList, setStudentsList]     = useState<StudentRecord[]>([]);
+  const [emailLogsQueue, setEmailLogsQueue] = useState<NotificationLog[]>([]);
 
-  // Cross-view selection data holders
+  // Cross-view
   const [selectedPresetStudent, setSelectedPresetStudent] = useState<StudentRecord | null>(null);
   const [scantargetData, setScantargetData] = useState<{
-    fullName: string;
-    userId: string;
-    email: string;
-    gender: Gender;
-    hasHijab: boolean;
+    fullName: string; userId: string; email: string; gender: Gender; hasHijab: boolean;
   } | null>(null);
 
-  // Toast status overlay HUD
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const triggerToast = (message: string) => {
-    setToastMessage(message);
-  };
+  const triggerToast = (message: string) => setToastMessage(message);
 
   useEffect(() => {
     if (toastMessage) {
-      const handle = setTimeout(() => {
-        setToastMessage(null);
-      }, 4000);
+      const handle = setTimeout(() => setToastMessage(null), 4000);
       return () => clearTimeout(handle);
     }
   }, [toastMessage]);
 
+  // ── API Helpers ──────────────────────────────────────────────────────────
+
+  const fetchStudents = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/students`);
+      const data: StudentRecord[] = await res.json();
+      setStudentsList(data.map(s => ({
+        ...s,
+        timestamp: s.createdAt ? s.createdAt.replace('T', ' ').substring(0, 19) : '',
+      })));
+    } catch { /* backend belum jalan */ }
+  }, []);
+
+  const fetchNotifLogs = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/notifications/logs`);
+      const data: NotificationLog[] = await res.json();
+      setEmailLogsQueue(data.map(l => ({ ...l, timestamp: l.sentAt ?? '' })));
+    } catch { /* ignore */ }
+  }, []);
+
+  const fetchAdminProfile = useCallback(async (id: number) => {
+    try {
+      const res  = await fetch(`${API}/admin/profile?adminId=${id}`);
+      const data = await res.json();
+      if (data.success) {
+        if (data.fullName)   setAdminName(data.fullName);
+        if (data.role)       setAdminRole(data.role);
+        if (data.department) setAdminDepartment(data.department);
+        if (data.avatarUrl)  setAdminAvatar(data.avatarUrl);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchStudents();
+      fetchNotifLogs();
+    }
+  }, [isLoggedIn, fetchStudents, fetchNotifLogs]);
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
+
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCurrentView('login');
-    triggerToast('Secure session logged out.');
+    sessionStorage.clear();
+    triggerToast('Sesi berhasil diakhiri.');
   };
 
   const handleLoginSuccess = (userId: string) => {
+    const id = Number(sessionStorage.getItem('adminId'));
     setAdminUserId(userId);
+    setAdminId(id);
+    setAdminName(sessionStorage.getItem('adminName') ?? 'Administrator');
+    setAdminRole(sessionStorage.getItem('adminRole') ?? 'Academic Inspector');
+    setAdminDepartment(sessionStorage.getItem('adminDepartment') ?? 'Panitia Monitor');
     setIsLoggedIn(true);
     setCurrentView('dashboard');
-    triggerToast(`Session initialized for User ID: ${userId}`);
+    if (id) fetchAdminProfile(id);
+    triggerToast(`Selamat datang, ${sessionStorage.getItem('adminName') ?? userId}!`);
   };
 
-  const handleResetSuccess = () => {
-    setCurrentView('login');
-    triggerToast('Access passwords reset. Please log in.');
-  };
+  const handleResetSuccess    = () => { setCurrentView('login'); triggerToast('OTP terverifikasi. Silakan login.'); };
+  const handleRegisterSuccess = () => { setCurrentView('login'); triggerToast('Pendaftaran berhasil. Menunggu persetujuan.'); };
 
-  const handleRegisterSuccess = () => {
-    setCurrentView('login');
-    triggerToast('Academy profile registered. Pending administrator approval.');
-  };
+  // ── Students ──────────────────────────────────────────────────────────────
 
-  // Student list modifiers
-  const handleAddScanRecord = (newRec: StudentRecord) => {
-    setStudentsList([newRec, ...studentsList]);
+  const handleAddScanRecord = async (newRec: StudentRecord) => {
+    try {
+      await fetch(`${API}/students/scan-mock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRec),
+      });
+    } catch { /* fallback */ }
+    await fetchStudents();
     setCurrentView('dashboard');
-    triggerToast(`Record Saved: Identity coordinates of ${newRec.fullName} verified.`);
+    triggerToast(`Rekaman tersimpan: ${newRec.fullName}`);
   };
 
-  const handleDeleteRecord = (id: string) => {
-    setStudentsList(studentsList.filter(s => s.id !== id));
-    triggerToast('Scanning record purged from database.');
+  const handleDeleteRecord = async (id: string) => {
+    try {
+      await fetch(`${API}/students/${id}`, { method: 'DELETE' });
+    } catch { /* ignore */ }
+    await fetchStudents();
+    triggerToast('Data rekaman berhasil dihapus.');
   };
 
-  // Email outbox modifiers
-  const handleSendMail = (newLog: NotificationLog) => {
-    setEmailLogsQueue([newLog, ...emailLogsQueue]);
+  // ── Notifications ─────────────────────────────────────────────────────────
+
+  const handleSendMail = async (newLog: NotificationLog) => {
+    try {
+      await fetch(`${API}/notifications/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient:   newLog.recipient,
+          studentName: newLog.studentName,
+          subject:     newLog.subject,
+          body:        newLog.body,
+        }),
+      });
+    } catch { /* ignore */ }
+    await fetchNotifLogs();
     setCurrentView('notifications');
-    triggerToast(`SMTP message dispatched to ${newLog.recipient}`);
+    triggerToast(`Pesan terkirim ke ${newLog.recipient}`);
   };
 
   const handleTriggerMailAlertForIncomplete = (student: StudentRecord) => {
     setSelectedPresetStudent(student);
     setCurrentView('notifications');
-    triggerToast(`Loaded template configuration for ${student.fullName}`);
+    triggerToast(`Template disiapkan untuk ${student.fullName}`);
+  };
+
+  // ── Admin Profile ─────────────────────────────────────────────────────────
+
+  const handleUpdateAdminDetails = async (name: string, role?: string, department?: string, avatar?: string) => {
+    if (adminId) {
+      try {
+        await fetch(`${API}/admin/profile?adminId=${adminId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName: name, role, department, avatarUrl: avatar }),
+        });
+      } catch { /* ignore */ }
+    }
+    setAdminName(name);
+    if (role)       setAdminRole(role);
+    if (department) setAdminDepartment(department);
+    if (avatar)     setAdminAvatar(avatar);
   };
 
   return (
     <div className="w-screen h-screen bg-[#111115] text-[#1b1b1d] flex items-center justify-center selection:bg-[#bfc5e7]/50 select-none">
-      
-      {/* Visual Framing Wrapper */}
-      <div 
-        id="sipma-app-root-frame"
-        className="w-full h-full bg-white text-base leading-relaxed overflow-hidden relative flex"
-      >
-        
-        {/* Render Non-Authenticated views */}
+      <div id="sipma-app-root-frame" className="w-full h-full bg-white text-base leading-relaxed overflow-hidden relative flex">
+
         {!isLoggedIn ? (
           <div className="w-full h-full">
-            {currentView === 'login' && (
-              <LoginView 
-                onNavigate={(v) => setCurrentView(v)} 
-                onLoginSuccess={handleLoginSuccess} 
-              />
-            )}
-            {currentView === 'register' && (
-              <RegisterView 
-                onNavigate={(v) => setCurrentView(v)} 
-                onRegisterSuccess={handleRegisterSuccess} 
-              />
-            )}
-            {currentView === 'verify' && (
-              <VerifyOTPView 
-                onNavigate={(v) => setCurrentView(v)} 
-                onResetSuccess={handleResetSuccess} 
-              />
-            )}
+            {currentView === 'login'    && <LoginView    onNavigate={v => setCurrentView(v)} onLoginSuccess={handleLoginSuccess} />}
+            {currentView === 'register' && <RegisterView onNavigate={v => setCurrentView(v)} onRegisterSuccess={handleRegisterSuccess} />}
+            {currentView === 'verify'   && <VerifyOTPView onNavigate={v => setCurrentView(v)} onResetSuccess={handleResetSuccess} />}
           </div>
         ) : (
-          /* Render Authenticated workspace with Header and Left Sidebar */
           <div className="flex w-full h-full overflow-hidden">
-            
-            {/* Left Navigation Rails Panel */}
-            <Sidebar 
-              currentView={currentView} 
-              onNavigate={(v) => setCurrentView(v)} 
-              onLogout={handleLogout} 
-            />
+            <Sidebar currentView={currentView} onNavigate={v => setCurrentView(v)} onLogout={handleLogout} />
 
-            {/* Right main viewing and dashboards screens block */}
             <div className="flex-grow h-full flex flex-col bg-[#FDFAF5] overflow-hidden">
-              
-              <Header 
+              <Header
                 currentView={currentView}
                 adminName={adminName}
                 adminRole={adminRole}
                 adminAvatar={adminAvatar}
                 notificationCount={studentsList.filter(s => s.status === 'INCOMPLETE').length}
                 unreadCount={emailLogsQueue.filter(l => l.status === 'FAILED').length}
-                onNavigate={(v) => setCurrentView(v)}
+                onNavigate={v => setCurrentView(v)}
               />
 
-              {/* View router switcher frame */}
               <div className="flex-grow overflow-hidden relative">
                 {currentView === 'dashboard' && (
-                  <DashboardView 
+                  <DashboardView
                     students={studentsList}
-                    onNavigate={(v) => setCurrentView(v as AppView)}
+                    onNavigate={v => setCurrentView(v as AppView)}
                     onSelectStudent={handleTriggerMailAlertForIncomplete}
                   />
                 )}
-
                 {currentView === 'detection-input' && (
-                  <DetectionInputView 
-                    onNavigate={(v) => setCurrentView(v)}
-                    onInitiateDetection={(config) => {
-                      setScantargetData(config);
-                      setCurrentView('detection-live');
-                    }}
+                  <DetectionInputView
+                    onNavigate={v => setCurrentView(v)}
+                    onInitiateDetection={config => { setScantargetData(config); setCurrentView('detection-live'); }}
                   />
                 )}
-
                 {currentView === 'detection-live' && scantargetData && (
-                  <DetectionLiveView 
+                  <DetectionLiveView
                     studentData={scantargetData}
                     onSaveScan={handleAddScanRecord}
                     onCancel={() => setCurrentView('detection-input')}
                   />
                 )}
-
                 {currentView === 'history' && (
-                  <HistoryView 
+                  <HistoryView
                     students={studentsList}
                     onDeleteRecord={handleDeleteRecord}
                     onSendNotification={handleTriggerMailAlertForIncomplete}
                   />
                 )}
-
                 {currentView === 'notifications' && (
-                  <NotificationsView 
+                  <NotificationsView
                     logs={emailLogsQueue}
                     presetTarget={selectedPresetStudent}
                     onSendMail={handleSendMail}
@@ -225,50 +253,39 @@ export default function App() {
                     students={studentsList}
                   />
                 )}
-
                 {currentView === 'settings' && (
-                  <SettingsView 
+                  <SettingsView
                     adminName={adminName}
                     adminRole={adminRole}
                     adminDepartment={adminDepartment}
                     adminAvatar={adminAvatar}
-                    onUpdateAdminDetails={(name, role, department, avatar) => {
-                      setAdminName(name);
-                      if (role) setAdminRole(role);
-                      if (department) setAdminDepartment(department);
-                      if (avatar) setAdminAvatar(avatar);
-                    }}
+                    onUpdateAdminDetails={handleUpdateAdminDetails}
                     onTriggerToast={triggerToast}
                   />
                 )}
-
                 {currentView === 'profile' && (
-                  <ProfileView 
+                  <ProfileView
                     adminName={adminName}
                     adminRole={adminRole}
                     adminDepartment={adminDepartment}
                     adminAvatar={adminAvatar}
-                    onNavigate={(v) => setCurrentView(v)}
+                    onNavigate={v => setCurrentView(v)}
                   />
                 )}
               </div>
-
             </div>
           </div>
         )}
 
-        {/* 3. Floating Bottom-Right Notifications Toast Overlays (Holographic status indicator) */}
         {toastMessage && (
-          <div className="absolute bottom-6 right-6 z-50 animate-bounce cursor-pointer select-all select-none" onClick={() => setToastMessage(null)}>
-            <div className="bg-[#0c132c] border border-cyan-400/40 text-white shadow-2xl p-4 flex items-center gap-4.5 rounded-sm max-w-sm">
+          <div className="absolute bottom-6 right-6 z-50 animate-bounce cursor-pointer" onClick={() => setToastMessage(null)}>
+            <div className="bg-[#0c132c] border border-cyan-400/40 text-white shadow-2xl p-4 flex items-center gap-4 rounded-sm max-w-sm">
               <div className="p-2 bg-emerald-100/10 text-cyan-400 rounded-sm">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
-                <h5 className="text-[11px] font-extrabold uppercase tracking-widest text-[#888fae]">Identity Confirmed</h5>
-                <p className="text-[11px] text-white/95 mt-1 leading-normal font-semibold">
-                  {toastMessage}
-                </p>
+                <h5 className="text-[11px] font-extrabold uppercase tracking-widest text-[#888fae]">Notifikasi Sistem</h5>
+                <p className="text-[11px] text-white/95 mt-1 leading-normal font-semibold">{toastMessage}</p>
               </div>
             </div>
           </div>

@@ -155,7 +155,7 @@ export default function HistoryView({ students, onDeleteRecord, onSendNotificati
       doc.setFont('helvetica', 'normal');
       doc.text(s.userId, 65, y + 6.5);
       doc.text(s.gender === 'Female' ? 'Perempuan' : 'Laki-laki', 100, y + 6.5);
-      doc.text(s.timestamp, 125, y + 6.5);
+      doc.text(s.createdAt ? s.createdAt.replace('T',' ').substring(0,19) : '-', 125, y + 6.5);
 
       // Render Checkmarks
       let checks = '';
@@ -348,7 +348,7 @@ export default function HistoryView({ students, onDeleteRecord, onSendNotificati
                         </td>
 
                         {/* Timestamp */}
-                        <td className="p-3 text-[#46464d] font-semibold">{student.timestamp}</td>
+                        <td className="p-3 text-[#46464d] font-semibold">{student.createdAt ? student.createdAt.replace('T',' ').substring(0,19) : '-'}</td>
 
                         {/* Compliance checks checklist column */}
                         <td className="p-3">
@@ -495,7 +495,7 @@ export default function HistoryView({ students, onDeleteRecord, onSendNotificati
 
           {/* Table display statistics details */}
           <footer className="p-4 border-t border-[#D4C9B0]/60 bg-[#FDFAF5] flex justify-between items-center text-xs font-semibold">
-            <span className="text-[#46464d]">Semua data register pemindaian disimpan secara lokal di dalam sistem browser Anda.</span>
+            <span className="text-[#46464d]">Semua data tersimpan di database backend Spring Boot.</span>
             <span className="text-[#0c132c]">Menampilkan {filtered.length} catatan</span>
           </footer>
 

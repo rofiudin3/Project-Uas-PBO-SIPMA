@@ -33,19 +33,37 @@ export default function LoginView({ onNavigate, onLoginSuccess }: LoginViewProps
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId.trim()) {
-      setErrorMsg('User ID tidak boleh kosong');
-      return;
+    if (!userId.trim()) { setErrorMsg('User ID tidak boleh kosong'); return; }
+    if (!password)       { setErrorMsg('Password tidak boleh kosong'); return; }
+
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      const res = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: userId, password }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Simpan adminId di sessionStorage untuk dipakai view lain
+        sessionStorage.setItem('adminId', String(data.adminId));
+        sessionStorage.setItem('adminName', data.fullName ?? '');
+        sessionStorage.setItem('adminRole', data.role ?? '');
+        sessionStorage.setItem('adminDepartment', data.department ?? '');
+        onLoginSuccess(data.username ?? userId);
+      } else {
+        setErrorMsg(data.message ?? 'Login gagal. Periksa kembali username dan password.');
+      }
+    } catch {
+      setErrorMsg('Tidak dapat terhubung ke server. Pastikan backend berjalan di port 8080.');
+    } finally {
+      setLoading(false);
     }
-    if (!password) {
-      setErrorMsg('Password tidak boleh kosong');
-      return;
-    }
-    // Simulate successful login
-    onLoginSuccess(userId);
   };
 
   return (

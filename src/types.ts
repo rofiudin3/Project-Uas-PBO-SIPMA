@@ -18,13 +18,13 @@ export type AppView =
 export type Gender = 'Male' | 'Female';
 
 export interface StudentRecord {
-  id: string; // e.g. "01"
+  id: string;
   profileUrl: string;
   fullName: string;
   email: string;
   gender: Gender;
   hasHijab: boolean;
-  userId: string; // e.g. "ST-202401"
+  userId: string;
   hasNametag: boolean;
   hasKemejaPutih: boolean;
   hasSabuk: boolean;
@@ -32,14 +32,27 @@ export interface StudentRecord {
   hasRokHitam: boolean;
   hasCelanaHitam: boolean;
   status: 'COMPLETE' | 'INCOMPLETE';
-  timestamp: string; // e.g. "2024-05-12 08:32:11"
+  createdAt: string; // ISO datetime dari backend
+  timestamp?: string; // alias untuk kompatibilitas tampilan
 }
 
 export interface NotificationLog {
+  id?: number;
   recipient: string;
-  type: string;
+  studentName?: string;
+  subject?: string;
+  body?: string;
+  type?: string;
   status: 'SENT' | 'FAILED';
-  timestamp: string;
+  sentAt?: string;
+  timestamp?: string;
+}
+
+export interface DashboardStats {
+  total: number;
+  complete: number;
+  incomplete: number;
+  completionRate: number;
 }
 
 export type SettingsTab = 'profile' | 'security' | 'preferences' | 'email';
