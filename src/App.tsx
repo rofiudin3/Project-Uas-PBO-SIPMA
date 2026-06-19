@@ -24,7 +24,7 @@ import ProfileView from './views/ProfileView';
 
 import { CheckCircle2 } from 'lucide-react';
 
-const API = 'http://localhost:8080/api';
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn]   = useState(false);

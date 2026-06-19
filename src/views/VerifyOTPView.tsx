@@ -41,8 +41,9 @@ export default function VerifyOTPView({ onNavigate, onResetSuccess }: VerifyOTPV
   const handleRequestOtp = async () => {
     if (!emailInput.trim()) { setErrorMsg('Username wajib diisi.'); return; }
     setLoading(true); setErrorMsg('');
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
     try {
-      const res = await fetch('http://localhost:8080/api/auth/request-otp', {
+      const res = await fetch(`${baseUrl}/api/auth/request-otp`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: emailInput }),
       });
@@ -59,8 +60,9 @@ export default function VerifyOTPView({ onNavigate, onResetSuccess }: VerifyOTPV
     const fullCode = otpCode.join('');
     if (fullCode.length < 6) { setErrorMsg('Masukkan 6 digit kode OTP lengkap.'); return; }
     setLoading(true); setErrorMsg('');
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
     try {
-      const res = await fetch('http://localhost:8080/api/auth/verify-otp', {
+      const res = await fetch(`${baseUrl}/api/auth/verify-otp`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: emailInput, otp: fullCode }),
       });
