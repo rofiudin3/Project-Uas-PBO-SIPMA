@@ -56,3 +56,17 @@ export interface DashboardStats {
 }
 
 export type SettingsTab = 'profile' | 'security' | 'preferences' | 'email';
+
+export function formatDateTime(dateTime: any): string {
+  if (!dateTime) return '';
+  if (typeof dateTime === 'string') {
+    return dateTime.replace('T', ' ').substring(0, 19);
+  }
+  if (Array.isArray(dateTime)) {
+    const [year, month, day, hour, minute, second] = dateTime;
+    const pad = (n: number) => String(n ?? 0).padStart(2, '0');
+    return `${year}-${pad(month)}-${pad(day)} ${pad(hour ?? 0)}:${pad(minute ?? 0)}:${pad(second ?? 0)}`;
+  }
+  return String(dateTime);
+}
+

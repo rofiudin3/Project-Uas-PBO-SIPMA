@@ -27,6 +27,7 @@ public class StudentRecord {
     @Column(nullable = false)
     private String status;   // COMPLETE / INCOMPLETE
 
+    @Column(length = 2048)
     private String profileUrl;
 
     // Atribut Bersama

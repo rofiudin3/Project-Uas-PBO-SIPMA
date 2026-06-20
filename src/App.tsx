@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { AppView, StudentRecord, NotificationLog, DashboardStats, Gender } from './types';
+import { AppView, StudentRecord, NotificationLog, DashboardStats, Gender, formatDateTime } from './types';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -63,20 +63,32 @@ export default function App() {
   const fetchStudents = useCallback(async () => {
     try {
       const res  = await fetch(`${API}/students`);
+      if (!res.ok) {
+        console.error("HTTP error fetching students:", res.status, res.statusText);
+        return;
+      }
       const data: StudentRecord[] = await res.json();
       setStudentsList(data.map(s => ({
         ...s,
-        timestamp: s.createdAt ? s.createdAt.replace('T', ' ').substring(0, 19) : '',
+        timestamp: formatDateTime(s.createdAt),
       })));
-    } catch { /* backend belum jalan */ }
+    } catch (err) {
+      console.error("Failed to fetch students from API:", err);
+    }
   }, []);
 
   const fetchNotifLogs = useCallback(async () => {
     try {
       const res  = await fetch(`${API}/notifications/logs`);
+      if (!res.ok) {
+        console.error("HTTP error fetching notifications:", res.status, res.statusText);
+        return;
+      }
       const data: NotificationLog[] = await res.json();
-      setEmailLogsQueue(data.map(l => ({ ...l, timestamp: l.sentAt ?? '' })));
-    } catch { /* ignore */ }
+      setEmailLogsQueue(data.map(l => ({ ...l, timestamp: formatDateTime(l.sentAt) })));
+    } catch (err) {
+      console.error("Failed to fetch notification logs:", err);
+    }
   }, []);
 
   const fetchAdminProfile = useCallback(async (id: number) => {
@@ -89,7 +101,9 @@ export default function App() {
         if (data.department) setAdminDepartment(data.department);
         if (data.avatarUrl)  setAdminAvatar(data.avatarUrl);
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error("Failed to fetch admin profile:", err);
+    }
   }, []);
 
   useEffect(() => {
@@ -128,12 +142,17 @@ export default function App() {
 
   const handleAddScanRecord = async (newRec: StudentRecord) => {
     try {
-      await fetch(`${API}/students/scan-mock`, {
+      const response = await fetch(`${API}/students/scan-mock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newRec),
       });
-    } catch { /* fallback */ }
+      if (!response.ok) {
+        console.error("HTTP error saving scan record:", response.status, response.statusText);
+      }
+    } catch (err) {
+      console.error("Failed to save scan record:", err);
+    }
     await fetchStudents();
     setCurrentView('dashboard');
     triggerToast(`Rekaman tersimpan: ${newRec.fullName}`);
@@ -159,6 +178,7 @@ export default function App() {
           studentName: newLog.studentName,
           subject:     newLog.subject,
           body:        newLog.body,
+          status:      newLog.status,
         }),
       });
     } catch { /* ignore */ }

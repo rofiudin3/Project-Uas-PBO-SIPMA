@@ -21,7 +21,7 @@ import {
   XSquare
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import { StudentRecord } from '../types';
+import { StudentRecord, formatDateTime } from '../types';
 
 interface HistoryViewProps {
   students: StudentRecord[];
@@ -155,7 +155,7 @@ export default function HistoryView({ students, onDeleteRecord, onSendNotificati
       doc.setFont('helvetica', 'normal');
       doc.text(s.userId, 65, y + 6.5);
       doc.text(s.gender === 'Female' ? 'Perempuan' : 'Laki-laki', 100, y + 6.5);
-      doc.text(s.createdAt ? s.createdAt.replace('T',' ').substring(0,19) : '-', 125, y + 6.5);
+      doc.text(formatDateTime(s.createdAt) || '-', 125, y + 6.5);
 
       // Render Checkmarks
       let checks = '';
@@ -348,7 +348,7 @@ export default function HistoryView({ students, onDeleteRecord, onSendNotificati
                         </td>
 
                         {/* Timestamp */}
-                        <td className="p-3 text-[#46464d] font-semibold">{student.createdAt ? student.createdAt.replace('T',' ').substring(0,19) : '-'}</td>
+                        <td className="p-3 text-[#46464d] font-semibold">{formatDateTime(student.createdAt) || '-'}</td>
 
                         {/* Compliance checks checklist column */}
                         <td className="p-3">
