@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Gender, StudentRecord } from '../types';
 import { ASSET_URLS } from '../data';
+import { getApiUrl } from '../lib/api';
 
 interface DetectionLiveViewProps {
   studentData: {
@@ -144,7 +145,7 @@ export default function DetectionLiveView({ studentData, onSaveScan, onCancel }:
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('/api/detection/analyze', {
+      const response = await fetch(getApiUrl('/api/detection/analyze'), {
         method: 'POST',
         headers,
         body: formData,

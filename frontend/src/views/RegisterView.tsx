@@ -23,6 +23,7 @@ import {
   Check
 } from 'lucide-react';
 import { AppView } from '../types';
+import { getApiUrl } from '../lib/api';
 
 interface RegisterViewProps {
   onNavigate: (view: AppView) => void;
@@ -57,7 +58,7 @@ export default function RegisterView({ onNavigate, onRegisterSuccess }: Register
 
     try {
       // 1. Register the user in backend (using email as username)
-      const regResponse = await fetch('/api/auth/register', {
+      const regResponse = await fetch(getApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -119,7 +120,7 @@ export default function RegisterView({ onNavigate, onRegisterSuccess }: Register
     }
 
     try {
-      const response = await fetch('/api/auth/verify-otp', {
+      const response = await fetch(getApiUrl('/api/auth/verify-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -417,7 +418,7 @@ export default function RegisterView({ onNavigate, onRegisterSuccess }: Register
                   onClick={async () => {
                     setErrorMsg('');
                     try {
-                      const otpResponse = await fetch('/api/auth/request-otp', {
+                      const otpResponse = await fetch(getApiUrl('/api/auth/request-otp'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: email }),

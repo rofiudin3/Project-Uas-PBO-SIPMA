@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { ASSET_URLS } from '../data';
 import { AppView } from '../types';
+import { getApiUrl } from '../lib/api';
 
 interface LoginViewProps {
   onNavigate: (view: AppView) => void;
@@ -46,7 +47,7 @@ export default function LoginView({ onNavigate, onLoginSuccess }: LoginViewProps
     }
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -14,6 +14,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { AppView } from '../types';
+import { getApiUrl } from '../lib/api';
 
 interface VerifyOTPViewProps {
   onNavigate: (view: AppView) => void;
@@ -61,7 +62,7 @@ export default function VerifyOTPView({ onNavigate, onResetSuccess }: VerifyOTPV
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const response = await fetch('/api/auth/request-otp', {
+      const response = await fetch(getApiUrl('/api/auth/request-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: emailInput }),
@@ -87,7 +88,7 @@ export default function VerifyOTPView({ onNavigate, onResetSuccess }: VerifyOTPV
     }
 
     try {
-      const response = await fetch('/api/auth/verify-otp', {
+      const response = await fetch(getApiUrl('/api/auth/verify-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -123,7 +124,7 @@ export default function VerifyOTPView({ onNavigate, onResetSuccess }: VerifyOTPV
     }
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
+      const response = await fetch(getApiUrl('/api/auth/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

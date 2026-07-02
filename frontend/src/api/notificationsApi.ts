@@ -5,6 +5,7 @@
 
 import { supabase } from '../lib/supabaseClient';
 import { NotificationLog } from '../types';
+import { getApiUrl } from '../lib/api';
 
 // ─── Tipe Payload ────────────────────────────────────────────────────────────
 
@@ -58,7 +59,7 @@ export async function sendWhatsAppNotification(
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch('/api/notifications/whatsapp', {
+    const response = await fetch(getApiUrl('/api/notifications/whatsapp'), {
       method: 'POST',
       headers,
       body: JSON.stringify({
